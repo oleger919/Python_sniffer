@@ -1,6 +1,8 @@
 import scapy.all as scapy
+from PyQt5.QtWidgets import QMessageBox
+
 import mainwindownew as mainwindow
-import window2 as second_window
+import second_window as second_window
 import sys
 import psutil
 from PyQt5 import QtWidgets
@@ -27,7 +29,40 @@ class Sniff:
 class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
     def __init__(self, parent=None):
         super(Window_2, self).__init__(parent)
-        self.setupUi(self)
+        self.sniff_running = False
+        ui1 = mainwindow.Ui_mainWindow()
+        ui1.setupUi(self)
+        print(ui1.comboBox_2.currentText())
+        uic = second_window.Ui_Dialog()
+        uic.setupUi(self)
+        uic.start_button.clicked.connect(self.start_sniff)
+        uic.stop_button.clicked.connect(self.stop_sniff)
+
+    def start_sniff(self):
+        print('нажатие на старт')
+        sniffer = Sniff()
+        # interface = self.ui.comboBox_1.currentText()
+        interface = Main.uic.comboBox_2.currentText()
+        print(interface)
+        self.sniff_running = True
+        while self.sniff_running:
+            Sniff.sniff(sniffer, interface)
+
+    def stop_sniff(self):
+        print('нажатие на стоп')
+        self.sniff_running = False
+
+    # def closeEvent(self, event):
+    #     # Переопределить colseEvent
+    #     reply = QMessageBox.question \
+    #         (self, 'Вы нажали на крестик',
+    #          "Вы уверены, что хотите уйти?",
+    #          QMessageBox.Yes,
+    #          QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()
 
 
 class Main(QtWidgets.QMainWindow):
@@ -45,11 +80,20 @@ class Main(QtWidgets.QMainWindow):
         self.inst = Window_2()
         self.inst.show()
 
-        sniffer = Sniff()
-        interface = self.ui.comboBox_1.currentText()
-        print(interface)
-        Sniff.sniff(sniffer, interface)
-        sys.exit(app.exec_())
+
+    # def start_sniff(self):
+    #     print('нажатие на старт')
+    #     sniffer = Sniff()
+    #     interface = self.ui.comboBox_1.currentText()
+    #     print(interface)
+    #     self.sniff_running = True
+    #     while self.sniff_running:
+    #         Sniff.sniff(sniffer, interface)
+    #
+    #     # sys.exit(app.exec_())
+    #
+    # def stop_sniff(self):
+    #     self.sniff_running = False
 
     def cmbbox_2_onchange(self):
         pass
@@ -58,8 +102,6 @@ class Main(QtWidgets.QMainWindow):
         # print(str(self.comboBox_2.currentText()))
         # if self.ui.comboBox_2.currentText() == 'Ввести вручную':
         #     self.ui.lineEdit.show()
-
-
 
     def check_net_addrs(self):
         # Просмотр доступных сетевых интерфейсов и добавление списка в ComboBox_1
