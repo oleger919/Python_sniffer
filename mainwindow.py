@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'mainwindow.ui'
+# Form implementation generated from reading ui file 'mainwindownew.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -46,6 +46,7 @@ class Ui_mainWindow(object):
         self.comboBox_2.addItem("")
         self.comboBox_2.addItem("")
         self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
         self.gridLayout_2.addWidget(self.comboBox_2, 0, 2, 1, 1)
         self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit.setEnabled(True)
@@ -60,6 +61,7 @@ class Ui_mainWindow(object):
         self.gridLayout_2.addItem(spacerItem1, 0, 1, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_2)
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton.setStyleSheet("")
         self.pushButton.setObjectName("pushButton")
         self.verticalLayout.addWidget(self.pushButton, 0, QtCore.Qt.AlignHCenter)
         mainWindow.setCentralWidget(self.centralwidget)
@@ -80,12 +82,13 @@ class Ui_mainWindow(object):
         mainWindow.setWindowTitle(_translate("mainWindow", "Анализ трафика"))
         self.label.setText(_translate("mainWindow", "<html><head/><body><p><span style=\" font-size:11pt;\">Выберите сетевой интерфейс</span></p></body></html>"))
         self.label_2.setText(_translate("mainWindow", "<html><head/><body><p><span style=\" font-size:11pt;\">Выберите фильтр по технологии BPF</span></p></body></html>"))
-        self.comboBox_2.setItemText(0, _translate("mainWindow", "IP"))
-        self.comboBox_2.setItemText(1, _translate("mainWindow", "IPv6"))
-        self.comboBox_2.setItemText(2, _translate("mainWindow", "TCP"))
-        self.comboBox_2.setItemText(3, _translate("mainWindow", "UDP"))
-        self.comboBox_2.setItemText(4, _translate("mainWindow", "WLAN"))
-        self.comboBox_2.setItemText(5, _translate("mainWindow", "ARP"))
-        self.comboBox_2.setItemText(6, _translate("mainWindow", "ICMP"))
-        self.comboBox_2.setItemText(7, _translate("mainWindow", "Ввести вручную"))
+        self.comboBox_2.setItemText(0, _translate("mainWindow", "Без фильтра"))
+        self.comboBox_2.setItemText(1, _translate("mainWindow", "IP"))
+        self.comboBox_2.setItemText(2, _translate("mainWindow", "IPv6"))
+        self.comboBox_2.setItemText(3, _translate("mainWindow", "TCP"))
+        self.comboBox_2.setItemText(4, _translate("mainWindow", "UDP"))
+        self.comboBox_2.setItemText(5, _translate("mainWindow", "WLAN"))
+        self.comboBox_2.setItemText(6, _translate("mainWindow", "ARP"))
+        self.comboBox_2.setItemText(7, _translate("mainWindow", "ICMP"))
+        self.comboBox_2.setItemText(8, _translate("mainWindow", "Ввести вручную"))
         self.pushButton.setText(_translate("mainWindow", "Начать"))
