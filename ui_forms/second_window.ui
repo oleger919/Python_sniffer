@@ -102,13 +102,18 @@
        <string>Packet</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Info</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
     <widget class="QTableWidget" name="infotable"/>
    </item>
    <item>
-    <widget class="QTextEdit" name="textEdit"/>
+    <widget class="QTextEdit" name="hexdump_edit"/>
    </item>
   </layout>
  </widget>

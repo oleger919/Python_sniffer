@@ -58,13 +58,15 @@ class Sniff:
     def process_sniffed(self, packet):
         global root_window
         if self.processing:
+            scapy.wrpcap(filename='sniffed', pkt=packet, append=True)
             if packet.haslayer(IP):
                 add_to_table_list = {'source': str(packet[IP].src),
                                      'destination': str(packet[IP].dst),
                                      'protocol': '',
                                      'length': str(packet[IP].len),
-                                     'raw': '',
-                                     'packet': str(packet)
+                                     'raw': 'None',
+                                     'packet': str(packet),
+                                     'info': packet.show()
                                      }
                 if packet.proto in scapy_proto_dict.keys():
                     add_to_table_list['protocol'] = scapy_proto_dict[packet.proto]
@@ -78,11 +80,15 @@ class Sniff:
 
                 rows_count = root_window.inst.ui.snifftable.rowCount()
                 root_window.inst.ui.snifftable.setItem(rows_count - 1, 0, QTableWidgetItem(add_to_table_list['source']))
-                root_window.inst.ui.snifftable.setItem(rows_count - 1, 1, QTableWidgetItem(add_to_table_list['destination']))
-                root_window.inst.ui.snifftable.setItem(rows_count - 1, 2, QTableWidgetItem(add_to_table_list['protocol']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 1,
+                                                       QTableWidgetItem(add_to_table_list['destination']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 2,
+                                                       QTableWidgetItem(add_to_table_list['protocol']))
                 root_window.inst.ui.snifftable.setItem(rows_count - 1, 3, QTableWidgetItem(add_to_table_list['length']))
                 root_window.inst.ui.snifftable.setItem(rows_count - 1, 4, QTableWidgetItem(add_to_table_list['raw']))
                 root_window.inst.ui.snifftable.setItem(rows_count - 1, 5, QTableWidgetItem(add_to_table_list['packet']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 6, QTableWidgetItem(add_to_table_list['info']))
+
                 root_window.inst.ui.snifftable.insertRow(rows_count)
                 # self.packet_list.append(packet)
 
@@ -96,7 +102,7 @@ class Sniff:
 
     def stop_sniff(self):
         self.processing = False
-        scapy.wrpcap(filename='test', pkt=self.packet_list)
+        # scapy.wrpcap(filename='sniffed', pkt=self.packet_list)
 
 
 class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
@@ -108,7 +114,7 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
         uic.start_button.clicked.connect(self.start_sniff)
         uic.stop_button.clicked.connect(self.stop_sniff)
         self.cols = uic.snifftable.columnCount()
-        # uic.snifftable.hideColumn(self.cols-1)
+        # uic.snifftable.hideColumn(5)
         self.second_thread = SniffThread()
 
         self.mouse_press = None
@@ -116,14 +122,10 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
         # uic.snifftable.hideColumn(0)
 
     def clickedRowColumn(self, r, c):
-        print('click')
-        # packet = self.ui.snifftable.get
-        # self.ui.textEdit.setPlainText(hexdump(packet))
         row = self.ui.snifftable.currentItem().row()
-        print("row=", row)
-        item = (self.ui.snifftable.item(row, self.cols-1)).text()
-        print(item)
-        self.ui.hexdump_edit.setPlainText(hexdump(item))
+        item = (self.ui.snifftable.item(row, 5)).text()
+        hexitem = hexdump(item, dump=True)
+        self.ui.hexdump_edit.setText(hexitem)
 
     def start_sniff(self):
         global iface_to_sniff, filter_to_sniff
@@ -138,17 +140,18 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
         self.second_thread.running = False
         self.second_thread.my_sniffer.stop_sniff()
 
-    # def closeEvent(self, event):
-    #     # Переопределить colseEvent
-    #     reply = QMessageBox.question \
-    #         (self, 'Вы нажали на крестик',
-    #          "Вы уверены, что хотите уйти?",
-    #          QMessageBox.Yes,
-    #          QMessageBox.No)
-    #     if reply == QMessageBox.Yes:
-    #         event.accept()
-    #     else:
-    #         event.ignore()
+    def closeEvent(self, event, mode=0):
+        reply = QMessageBox.question \
+            (self, 'Выход из приложения',
+             "Сохранить перехваченные пакеты?",
+             QMessageBox.No,
+             QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            root_window.close()
+            event.accept()
+
+        else:
+            event.accept()
 
 
 class Main(QtWidgets.QMainWindow):
@@ -170,6 +173,7 @@ class Main(QtWidgets.QMainWindow):
             filter_to_sniff = ''
         else:
             filter_to_sniff = self.ui.comboBox_2.currentText()
+        root_window.hide()
         self.inst.show()
 
     def cmbbox_2_onchange(self):
