@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>549</width>
-    <height>432</height>
+    <width>602</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -92,10 +92,23 @@
        <string>Length</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Data</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Packet</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
     <widget class="QTableWidget" name="infotable"/>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="textEdit"/>
    </item>
   </layout>
  </widget>

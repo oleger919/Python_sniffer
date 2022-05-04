@@ -3,11 +3,13 @@ import scapy.all as scapy
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from scapy.layers.inet import IP
+from scapy.layers.http import Raw
 import mainwindow as mainwindow
 import second_window as second_window
 import sys
 import psutil
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
+from scapy.utils import hexdump
 
 # import darktheme
 # from darktheme.widget_template import DarkPalette
@@ -15,6 +17,11 @@ from PyQt5 import QtWidgets
 
 iface_to_sniff = ''
 filter_to_sniff = 'IP'
+scapy_proto_dict = {6: 'TCP',
+                    17: 'UDP',
+                    1: 'ICMP',
+                    # 0: 'IP',
+                    }
 
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
@@ -52,15 +59,30 @@ class Sniff:
         global root_window
         if self.processing:
             if packet.haslayer(IP):
-                add_to_table_list = [str(packet[IP].src), str(packet[IP].dst)]
-                add_to_table_list.append('TCP') if packet.proto == 6 else add_to_table_list.append(str(packet.proto))
+                add_to_table_list = {'source': str(packet[IP].src),
+                                     'destination': str(packet[IP].dst),
+                                     'protocol': '',
+                                     'length': str(packet[IP].len),
+                                     'raw': '',
+                                     'packet': str(packet)
+                                     }
+                if packet.proto in scapy_proto_dict.keys():
+                    add_to_table_list['protocol'] = scapy_proto_dict[packet.proto]
+                else:
+                    add_to_table_list['protocol'] = str(packet.proto)
+                if packet.haslayer(Raw):
+                    add_to_table_list['raw'] = str(packet[Raw].load)
                 print(add_to_table_list)
                 print(packet.show())
+                # print(hexdump(packet))
 
                 rows_count = root_window.inst.ui.snifftable.rowCount()
-                root_window.inst.ui.snifftable.setItem(rows_count - 1, 0, QTableWidgetItem(add_to_table_list[0]))
-                root_window.inst.ui.snifftable.setItem(rows_count - 1, 1, QTableWidgetItem(add_to_table_list[1]))
-                root_window.inst.ui.snifftable.setItem(rows_count - 1, 2, QTableWidgetItem(add_to_table_list[2]))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 0, QTableWidgetItem(add_to_table_list['source']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 1, QTableWidgetItem(add_to_table_list['destination']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 2, QTableWidgetItem(add_to_table_list['protocol']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 3, QTableWidgetItem(add_to_table_list['length']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 4, QTableWidgetItem(add_to_table_list['raw']))
+                root_window.inst.ui.snifftable.setItem(rows_count - 1, 5, QTableWidgetItem(add_to_table_list['packet']))
                 root_window.inst.ui.snifftable.insertRow(rows_count)
                 # self.packet_list.append(packet)
 
@@ -85,7 +107,23 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
         uic.setupUi(self)
         uic.start_button.clicked.connect(self.start_sniff)
         uic.stop_button.clicked.connect(self.stop_sniff)
+        self.cols = uic.snifftable.columnCount()
+        # uic.snifftable.hideColumn(self.cols-1)
         self.second_thread = SniffThread()
+
+        self.mouse_press = None
+        uic.snifftable.cellPressed[int, int].connect(self.clickedRowColumn)
+        # uic.snifftable.hideColumn(0)
+
+    def clickedRowColumn(self, r, c):
+        print('click')
+        # packet = self.ui.snifftable.get
+        # self.ui.textEdit.setPlainText(hexdump(packet))
+        row = self.ui.snifftable.currentItem().row()
+        print("row=", row)
+        item = (self.ui.snifftable.item(row, self.cols-1)).text()
+        print(item)
+        self.ui.hexdump_edit.setPlainText(hexdump(item))
 
     def start_sniff(self):
         global iface_to_sniff, filter_to_sniff
