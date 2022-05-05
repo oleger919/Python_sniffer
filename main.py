@@ -9,7 +9,7 @@ import second_window as second_window
 import sys
 import psutil
 from PyQt5 import QtWidgets, QtCore
-from scapy.utils import hexdump
+from scapy.utils import hexdump, PcapReader
 
 # import darktheme
 # from darktheme.widget_template import DarkPalette
@@ -55,6 +55,7 @@ class Sniff:
         self.processing = True
         self.packet_list = []
 
+
     def process_sniffed(self, packet):
         global root_window
         if self.processing:
@@ -91,6 +92,7 @@ class Sniff:
 
                 root_window.inst.ui.snifftable.insertRow(rows_count)
                 # self.packet_list.append(packet)
+                scapy.wrpcap('sniffed', packet, append=True)
 
     def sniff(self):
         global iface_to_sniff, filter_to_sniff
@@ -104,6 +106,15 @@ class Sniff:
         self.processing = False
         # scapy.wrpcap(filename='sniffed', pkt=self.packet_list)
 
+    def read_from_pcap(self):
+        pcap_file = QtWidgets.QFileDialog.getOpenFileName()
+        print(pcap_file)
+        # for packet in PcapReader(pcap_path):
+        #     try:
+        #         if packet[TCP].dport == 80:
+        #
+        #     except Exception as e:
+        #         pass
 
 class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
     def __init__(self, parent=None):
@@ -115,6 +126,11 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
         uic.stop_button.clicked.connect(self.stop_sniff)
         self.cols = uic.snifftable.columnCount()
         # uic.snifftable.hideColumn(5)
+
+        # self.ui.menubar = QtWidgets.QMenuBar()
+        # fileMenu = self.ui.menubar.addMenu('&File')
+
+
         self.second_thread = SniffThread()
 
         self.mouse_press = None
@@ -146,7 +162,15 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
              "Сохранить перехваченные пакеты?",
              QMessageBox.No,
              QMessageBox.Yes)
+
         if reply == QMessageBox.Yes:
+            fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets')[0]
+            saved_f = open(fname + '.txt', 'w')
+            sniffed_file = open('sniffed', 'r')
+
+            with saved_f:
+                saved_f.write(sniffed_file)
+                saved_f.close()
             root_window.close()
             event.accept()
 
