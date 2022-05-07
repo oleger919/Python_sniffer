@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from scapy.layers.inet import IP
 from scapy.layers.http import Raw
 import mainwindow as mainwindow
-import second_window as second_window
+import second_window_bar as second_window
 import sys
 import psutil
 from PyQt5 import QtWidgets, QtCore
@@ -122,10 +122,10 @@ class Sniff:
         #         pass
 
 
-class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
+class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
     def __init__(self, parent=None):
         super(Window_2, self).__init__(parent)
-        uic = second_window.Ui_Dialog()
+        uic = second_window.Ui_MainWindow()
         self.ui = uic
         uic.setupUi(self)
         uic.start_button.clicked.connect(self.start_sniff)
