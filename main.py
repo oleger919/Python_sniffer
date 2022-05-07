@@ -1,4 +1,5 @@
 import os
+import platform
 import traceback
 import scapy.all as scapy
 from PyQt5.QtCore import QThread
@@ -12,6 +13,7 @@ import psutil
 from PyQt5 import QtWidgets, QtCore
 from scapy.utils import hexdump, PcapReader
 from shutil import move as move_file
+from platform import system
 
 # import darktheme
 # from darktheme.widget_template import DarkPalette
@@ -41,6 +43,8 @@ class SniffThread(QThread):
     def __init__(self, parent=None):
         super(SniffThread, self).__init__(parent)
         self.running = True
+        my_file = open("sniffed", "w+")
+        my_file.close()
         self.my_sniffer = Sniff()
 
     def run(self):
@@ -56,7 +60,6 @@ class Sniff:
         self.filter_to_sniff = filter_to_sniff
         self.processing = True
         self.packet_list = []
-
 
     def process_sniffed(self, packet):
         global root_window
@@ -118,6 +121,7 @@ class Sniff:
         #     except Exception as e:
         #         pass
 
+
 class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
     def __init__(self, parent=None):
         super(Window_2, self).__init__(parent)
@@ -131,7 +135,6 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
 
         # self.ui.menubar = QtWidgets.QMenuBar()
         # fileMenu = self.ui.menubar.addMenu('&File')
-
 
         self.second_thread = SniffThread()
 
@@ -167,14 +170,19 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
 
         if reply == QMessageBox.Yes:
             fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets', 'PCAP файл (*.pcapng)')[0]
-            # sniffed_file = open('sniffed', 'r')
-            current_dir = os.path.dirname(os.path.abspath(__file__)) + '\sniffed'
-            # print(current_dir)
+            filename = ''
+            print(platform.system())
+            if platform.system() == 'Windows':
+                filename = '\sniffed'
+            elif platform.system() == 'Linux' or 'Darwin':
+                filename = '/sniffed'
+            current_dir = os.path.dirname(os.path.abspath(__file__)) + filename
             move_file(current_dir, fname)
             root_window.close()
             event.accept()
 
         else:
+            os.remove('sniffed')
             event.accept()
 
 
