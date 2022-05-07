@@ -1,3 +1,4 @@
+import os
 import traceback
 import scapy.all as scapy
 from PyQt5.QtCore import QThread
@@ -10,6 +11,7 @@ import sys
 import psutil
 from PyQt5 import QtWidgets, QtCore
 from scapy.utils import hexdump, PcapReader
+from shutil import move as move_file
 
 # import darktheme
 # from darktheme.widget_template import DarkPalette
@@ -164,13 +166,11 @@ class Window_2(QtWidgets.QWidget, second_window.Ui_Dialog):
              QMessageBox.Yes)
 
         if reply == QMessageBox.Yes:
-            fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets')[0]
-            saved_f = open(fname + '.txt', 'w')
-            sniffed_file = open('sniffed', 'r')
-
-            with saved_f:
-                saved_f.write(sniffed_file)
-                saved_f.close()
+            fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets', 'PCAP файл (*.pcapng)')[0]
+            # sniffed_file = open('sniffed', 'r')
+            current_dir = os.path.dirname(os.path.abspath(__file__)) + '\sniffed'
+            # print(current_dir)
+            move_file(current_dir, fname)
             root_window.close()
             event.accept()
 
