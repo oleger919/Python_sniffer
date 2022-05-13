@@ -237,15 +237,19 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
              QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets', 'PCAP файл (*.pcapng)')[0]
-            filename = ''
-            if platform_system() == 'Windows':
-                filename = '\sniffed'
-            elif platform_system() == 'Linux' or 'Darwin':
-                filename = '/sniffed'
-            current_dir = os.path.dirname(os.path.abspath(__file__)) + filename
-            move_file(current_dir, fname)
-            root_window.close()
-            event.accept()
+            if fname != '':
+                filename = ''
+                if platform_system() == 'Windows':
+                    filename = '\sniffed'
+                elif platform_system() == 'Linux' or 'Darwin':
+                    filename = '/sniffed'
+                current_dir = os.path.dirname(os.path.abspath(__file__)) + filename
+                copyfile(current_dir, fname)
+                root_window.close()
+                event.accept()
+            else:
+                QMessageBox.critical(None, 'Ошибка', 'Не выбран путь для сохранения файла, операция не произведена')
+                event.ignore()
         else:
             os.remove('sniffed')
             event.accept()
