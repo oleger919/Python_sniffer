@@ -1,27 +1,26 @@
-import os
-import time
-import traceback
-import scapy.all as scapy
-from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
-from scapy.layers.inet import IP
-from scapy.layers.http import Raw
 import sys
 import psutil
-from PyQt5 import QtWidgets
+import os
+import traceback
+import scapy.all as scapy
+from scapy.layers.inet import IP
+from scapy.layers.http import Raw
 from scapy.utils import hexdump
+from scapy.arch import windows as pcap_check
+from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
+from PyQt5 import QtWidgets, QtGui
 from shutil import move as move_file
 from shutil import copyfile
 from platform import system as platform_system
 import mainwindow as mainwindow
-import second_window_bar as second_window
+import second_window as second_window
 
 iface_to_sniff = ''
 filter_to_sniff = 'IP'
 scapy_proto_dict = {6: 'TCP',
                     17: 'UDP',
                     1: 'ICMP',
-                    # 0: 'IP',
                     }
 
 
@@ -37,6 +36,8 @@ sys.excepthook = log_uncaught_exceptions
 
 
 class SniffThread(QThread):
+    """Реализация многопоточности"""
+
     def __init__(self, parent=None):
         super(SniffThread, self).__init__(parent)
         self.running = True
@@ -45,7 +46,6 @@ class SniffThread(QThread):
         self.my_sniffer = Sniff()
 
     def run(self):
-        """ parameter "mode" : 0 - reading file, 1 - real-time sniff"""
         while self.running:
             self.my_sniffer.sniff()
 
@@ -55,6 +55,7 @@ class SniffThread(QThread):
 
 
 class Sniff:
+    """Функционал сниффера"""
 
     def __init__(self):
         global iface_to_sniff, filter_to_sniff
@@ -64,6 +65,7 @@ class Sniff:
         self.packet_list = []
 
     def process_sniffed(self, packet):
+        """Обработка перехваченного пакета"""
         global root_window
         if self.processing:
             scapy.wrpcap(filename='sniffed', pkt=packet, append=True)
@@ -97,7 +99,8 @@ class Sniff:
                 scapy.wrpcap('sniffed', packet, append=True)
 
     def sniff(self, mode=1):
-        """ parameter "mode" : 0 - reading file, 1 - real-time sniff"""
+        """Перехват трафика"""
+        """ Параметр "mode" : 0 - чтение из файла, 1 - перехват в реальном времени"""
         global iface_to_sniff, filter_to_sniff
         self.iface_to_sniff = iface_to_sniff
         self.filter_to_sniff = filter_to_sniff
@@ -117,6 +120,8 @@ class Sniff:
 
 
 class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
+    """Обработка интерфейса второго окна"""
+
     def __init__(self, parent=None):
         super(Window_2, self).__init__(parent)
         uic = second_window.Ui_MainWindow()
@@ -143,12 +148,14 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
         uic.snifftable.cellPressed[int, int].connect(self.clickedRowColumn)
 
     def show_info(self):
+        """Вывод информации о программе в MessageBox"""
         QMessageBox.information(None, 'О программе', 'Данная программа представляет собой '
                                                      'пассивный сниффер для анализа '
                                                      'трафика в локальной сети \n'
                                                      'Разработчик: Олег Баранов')
 
     def change_iface(self):
+        """Смена исследуемого интерфейса"""
         global root_window
         reply = QMessageBox.question \
             (self, 'Смена интерфейса для перехвата',
@@ -177,6 +184,7 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
         self.ui.hexdump_edit.setText('Нажмите на строку, чтобы увидеть шестнадцатеричное представление пакета')
 
     def clickedRowColumn(self, r, c):
+        """Представление пакета в шестнадцатеричной системе"""
         if self.ui.snifftable.currentItem() is not None:
             row = self.ui.snifftable.currentItem().row()
             item = (self.ui.snifftable.item(row, 5)).text()
@@ -184,24 +192,31 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
             self.ui.hexdump_edit.setText(hexitem)
 
     def open_pcap_file(self):
+        """Чтение перехваченных пакетов из файла .pcap"""
         self.stop_sniff()
         self.clear_snifftable()
         self.my_sniffer = Sniff()
         self.my_sniffer.sniff(mode=0)
 
     def save_pcap_file(self):
+        """Сохранение пакетов в .pcap файл"""
         fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets', 'PCAP файл (*.pcapng)')[0]
-        filename = ''
-        if platform_system() == 'Windows':
-            filename = '\sniffed'
-        elif platform_system() == 'Linux' or 'Darwin':
-            filename = '/sniffed'
-        current_dir = os.path.dirname(os.path.abspath(__file__)) + filename
-        copyfile(current_dir, fname)
+        if fname != '':
+            filename = ''
+            if platform_system() == 'Windows':
+                filename = '\sniffed'
+            elif platform_system() == 'Linux' or 'Darwin':
+                filename = '/sniffed'
+            current_dir = os.path.dirname(os.path.abspath(__file__)) + filename
+            copyfile(current_dir, fname)
+        else:
+            QMessageBox.critical(None, 'Ошибка', 'Не выбран путь для сохранения файла, операция не произведена')
 
-    def start_sniff(self, mode=1):
-        """ parameter "mode" : 0 - reading file, 1 - real-time sniff"""
+    def start_sniff(self):
         global iface_to_sniff, filter_to_sniff
+        use_npcap = pcap_check.conf.use_npcap
+        if not use_npcap and platform_system() == 'Windows':
+            QMessageBox.critical(None, 'Ошибка', 'На вашем компьютере не установлен npcap, перехват невозможен ')
         self.ui.hexdump_edit.setText('Нажмите на строку, чтобы увидеть шестнадцатеричное представление пакета')
         self.ui.what_iface_sniff.setText(iface_to_sniff)
         if not self.second_thread.running:
@@ -220,7 +235,6 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
              "Сохранить перехваченные пакеты?",
              QMessageBox.No,
              QMessageBox.Yes)
-
         if reply == QMessageBox.Yes:
             fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '/packets', 'PCAP файл (*.pcapng)')[0]
             filename = ''
@@ -232,13 +246,14 @@ class Window_2(QtWidgets.QMainWindow, second_window.Ui_MainWindow):
             move_file(current_dir, fname)
             root_window.close()
             event.accept()
-
         else:
             os.remove('sniffed')
             event.accept()
 
 
 class Main(QtWidgets.QMainWindow):
+    """Обработка интерфейса первого окна"""
+
     def __init__(self, parent=None):
         super(Main, self).__init__(parent)
         uic = mainwindow.Ui_mainWindow()
@@ -249,8 +264,12 @@ class Main(QtWidgets.QMainWindow):
         uic.lineEdit.hide()
         self.check_net_addrs()
         self.inst = Window_2()
+        use_npcap = pcap_check.conf.use_npcap
+        if not use_npcap and platform_system() == 'Windows':
+            QMessageBox.critical(None, 'Ошибка', 'На вашем компьютере не установлен Npcap, перехват невозможен ')
 
-    def show_window_2(self):  # открытие 2  окна
+    def show_window_2(self):
+        """Скрыть первое окно, отобразить второе и передать параменты для перехвата"""
         global iface_to_sniff, filter_to_sniff
         iface_to_sniff = self.ui.comboBox_1.currentText()
         if self.ui.comboBox_2.currentText() == 'Без фильтра':
@@ -277,6 +296,8 @@ class Main(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('icons/icon.ico'))
     root_window = Main()
+    root_window.setFixedSize(466, 333)
     root_window.show()
     sys.exit(app.exec_())
